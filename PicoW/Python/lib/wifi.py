@@ -1,19 +1,30 @@
 import time
 import network
 import machine
+import ubinascii
 
 class WIFI:
     def __init__(self):
         self.wlan = network.WLAN(network.STA_IF)
         self.led = machine.Pin("LED", machine.Pin.OUT)
-    #end def
 
 
     def getIpAddress(self):
         status = self.wlan.ifconfig()
         ipaddress = status[0]
         return ipaddress
-    #end def
+    
+
+    def getInfo(self):
+        print('\n--------------------------------------------------------------------------------')
+        print('WiFi name      : ' + self.wlan.config('ssid'))
+        print('IP address     : ' + self.wlan.ifconfig()[0])
+        print('Host name      : ' + self.wlan.config('hostname'))
+        print('MAC address    : ' + ubinascii.hexlify(self.wlan.config('mac'),':').decode())
+        print('Channel        : ' + str(self.wlan.config('channel')))
+        print('Security type  : ' + str(self.wlan.config('security')))
+        print('Transmit power : ' + str(self.wlan.config('txpower')))
+        print('--------------------------------------------------------------------------------')
 
 
     def connect(self, ssid, password):
@@ -28,14 +39,13 @@ class WIFI:
             while max_wait > 0:
                 if self.wlan.status() < 0 or self.wlan.status() >= 3:
                     break
-                #endif
+
                 self.led.on()
                 max_wait -= 1
                 print('Wachten op connectie...')
                 time.sleep(1/2)
                 self.led.off()
                 time.sleep(1/2)
-            #endloop
 
             if self.wlan.status() != 3:
                 raise RuntimeError('Verbinden met Wifi mislukt.')
@@ -43,10 +53,8 @@ class WIFI:
             else:
                 self.led.on()
                 status = self.wlan.ifconfig()
-                print('Verbonden met Wi-Fi netwerk %s. IP adres: %s' % (ssid, status[0]) )
-            #endif
-        #endif
-    #end def    
+                print('\nVerbonden met Wi-Fi netwerk')
+                self.getInfo()
         
 
     def disconnect(self):
@@ -56,8 +64,7 @@ class WIFI:
             print('Verbinding met Wi-Fi netwerk verbroken.')
         else:
             print('Geen actieve verbinding met een Wi-Fi network.')
-        #endif
-        self.led.off()
-    #end def
 
-#endclass
+        self.led.off()
+
+

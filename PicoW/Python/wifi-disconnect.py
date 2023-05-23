@@ -1,4 +1,9 @@
+import sys
 from wifi import WIFI
 
-wifi = WIFI()
-wifi.disconnect()
+def main():
+    wifi = WIFI()
+    wifi.disconnect()
+
+
+main()

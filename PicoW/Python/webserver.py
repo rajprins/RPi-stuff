@@ -21,9 +21,11 @@ html = """<!DOCTYPE html>
 """
 
 led = machine.Pin("LED", machine.Pin.OUT)
+
 # Load login data from different file for safety reasons
 ssid = secrets['ssid']
 password = secrets['password']
+
 wlan = network.WLAN(network.STA_IF)
 
 

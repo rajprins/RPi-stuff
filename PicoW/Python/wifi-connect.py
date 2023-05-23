@@ -4,5 +4,8 @@ from secrets import secrets
 ssid = secrets['ssid']
 password = secrets['password']
 
-wifi = WIFI()
-wifi.connect(ssid, password)
+def main():
+    wifi = WIFI()
+    wifi.connect(ssid, password)
+
+main()
