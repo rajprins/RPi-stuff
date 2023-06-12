@@ -23,10 +23,8 @@ class DHT(object):
         i=0
         j=0
         self.__pinData.value(1) 
-        #time.sleep(0.25) 
-
         self.data[0] =  self.data[1] =  self.data[2] =  self.data[3] =  self.data[4] = 0 
-        
+
         # now pull it low for ~20 milliseconds
         pinData = Pin(self.Data_pin, Pin.OUT, None)
         pinData.value(0) 
@@ -41,7 +39,7 @@ class DHT(object):
             time_cnt = time_cnt+1
             if(time_cnt > 16): 
                 return
-        
+
         #DHT11将总线拉高至少80us，为发送传感器数据做准备。
         time_cnt=0
         while(1 == pinData.value()):
@@ -64,6 +62,7 @@ class DHT(object):
 
                 if(PINC & pinData.value()):
                     result |=(1<<(7-i))
+
                 while(PINC & pinData.value()):  # wait '0' finish
                     time.sleep_us(5)   
                     time_cnt = time_cnt+1
@@ -83,7 +82,7 @@ class DHT(object):
         if ((j >= 4) and ( self.data[4] == dht11_check_sum)):
             return True 
         return False
-        
+
     def readHumidity(self):
         if (self.read()):
             self.humid = float(self.data[0])
@@ -95,7 +94,7 @@ class DHT(object):
             self.temp = float(self.data[2])
             self.temp = self.temp + float(self.data[3]/10)
         return self.temp
-    
+
     def readTempHumid(self):
         if (self.read()):        
             self.temp = float(self.data[2])
@@ -103,6 +102,7 @@ class DHT(object):
             self.humid = float(self.data[0])
             self.humid = self.humid + float(self.data[1]/10)
         return self.temp , self.humid
+
 '''           
 dht = DHT(6)
 for i in range(100):

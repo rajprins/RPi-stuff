@@ -1,5 +1,6 @@
 from machine import I2C, Pin
 import time
+
 class LCD1602(object):
     #commands
     LCD_CLEARDISPLAY = 0x01
@@ -39,7 +40,7 @@ class LCD1602(object):
     LCD_5x10DOTS = 0x04
     LCD_5x8DOTS = 0x00
     
-    def __init__(self, i2c, lines, dotsize, lcd_addr=0x3E):
+    def __init__(self, i2c, lines=2, dotsize=16, lcd_addr=0x3E):
         self.i2c = i2c
         self.lcd_address = lcd_addr
         self.line = lines
@@ -55,27 +56,26 @@ class LCD1602(object):
         #according to datasheet, we need at least 40ms after power rises above 2.7V
         #before sending commands. Arduino can turn on way befer 4.5V so we'll wait 50
         time.sleep_ms(50)
-        
+
         #this is according to the hitachi HD44780 datasheet
         #page 45 figure 23
 
         #Send function set command sequence
         self.command(self.LCD_FUNCTIONSET | self.display_control)
         time.sleep_us(4500) #wait more than 4.1ms
-        
+
         #second try
         self.command(self.LCD_FUNCTIONSET | self.display_control)
         time.sleep_us(150)
-        
+
         #third go
         self.command(self.LCD_FUNCTIONSET | self.display_control)
-        
+
         #finally, set # lines, font size, etc.
         self.command(self.LCD_FUNCTIONSET | self.display_control)
 
         #turn the display on with no cursor or blinking default
         self.display_mode = self.LCD_DISPLAYON | self.LCD_CURSOROFF | self.LCD_BLINKOFF
-        
         self.display()
 
         #clear it off
@@ -85,70 +85,100 @@ class LCD1602(object):
         self.display_mode = self.LCD_ENTRYLEFT | self.LCD_ENTRYSHIFTDECREMENT
         #set the entry mode
         self.command(self.LCD_ENTRYMODESET | self.display_mode)  
-        
+
+
     def clear(self):
-        self.command(self.LCD_CLEARDISPLAY)   #clear display, set cursor position to zero
-        time.sleep_ms(2)                  #this command takes a long time!
-        
+        #clear display, set cursor position to zero
+        self.command(self.LCD_CLEARDISPLAY)
+        #this command takes a long time!
+        time.sleep_ms(2)
+
+
     def home(self):
-        self.command(self.LCD_RETURNHOME)     #set cursor position to zero
-        time.sleep_ms(2)                  #this command takes a long time!
-        
+        # set cursor position to zero
+        self.command(self.LCD_RETURNHOME)
+        # this command takes a long time!
+        time.sleep_ms(2)
+
+
     def setCursor(self, col, row):
         col = (col | 0x80) if row == 0 else (col | 0xc0)
         self.command(col)
+
+
     #Turn the display on/off (quickly)
     def no_display(self):
         self.display_control &= ~self.LCD_DISPLAYON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-        
+
+
     def display(self):
         self.display_control |= self.LCD_DISPLAYON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
+
+
     #Turns the underline cursor on/off
     def no_cursor(self):
         self.display_control &= ~self.LCD_CURSORON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-            
+
+
     def cursor(self):
         self.display_control |= self.LCD_CURSORON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
+
+
     #Turn on and off the blinking cursor    
     def no_blink(self):
         self.display_control &= ~self.LCD_BLINKON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-            
+
+
     def blink(self):
         self.display_control |= self.LCD_BLINKON
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-             
-        
+
+
     def autoscroll(self):
         self.display_control |= self.LCD_ENTRYSHIFTINCREMENT
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-        
+
+
     def no_autoscroll(self):
         self.display_control &= ~self.LCD_ENTRYSHIFTINCREMENT
         self.command(self.LCD_DISPLAYCONTROL  | self.display_control)
-        
+
+
     def create_char(self, location, charmap):
         location &= 0x07
         self.command(LCD_SETCGRAMADDR | (location << 3))
         dta = bytearray([charmap])
         self.i2c.writeto_mem(self.address, 0x40, dta)
-        
+
+
     def command(self, command):
         command = bytearray([command])
         self.i2c.writeto_mem(self.lcd_address, 0x80, command)        
-        
+
+
     def write(self, command):
         command = bytearray([command])
         self.i2c.writeto_mem(self.lcd_address, 0x40, command)
-        
+
+
     def print(self, text):
         for char in text:
             self.write(ord(char))
 
+
+    def printLine1(self, text):
+        self.home()
+        self.print(text)
+
+
+    def printLine2(self, text):
+        self.setCursor(0, 1)
+        self.print(text)
 
         
 class LCD1602_RGB(LCD1602):
@@ -165,20 +195,22 @@ class LCD1602_RGB(LCD1602):
     REG_MODE1 = 0x00
     REG_MODE2 = 0x01
     REG_OUTPUT = 0x08
-    def __init__(self, i2c, lines, dotsize, lcd_addr=0x3E, rgb_addr=0x62):
+
+    def __init__(self, i2c, lines=2, dotsize=16, lcd_addr=0x3E, rgb_addr=0x62):
         self.rgb_address = rgb_addr
         LCD1602.__init__(self, i2c, lines, dotsize, lcd_addr)
-        
         #backlight init
         self.set_reg(0, 0)
         self.set_reg(1, 0)
         self.set_reg(0x08, 0xAA) #all led control by pwm
         self.set_rgb(255, 255, 255)
 
+
     def set_reg(self, addr, value):
         value = bytearray([value])
         self.i2c.writeto_mem(self.rgb_address, addr, bytearray([]))
         self.i2c.writeto_mem(self.rgb_address, addr, value)
+
 
     def set_rgb(self, red, green, blue):
         r = int(red)
@@ -187,7 +219,8 @@ class LCD1602_RGB(LCD1602):
         self.set_reg(self.REG_RED, r)
         self.set_reg(self.REG_GREEN, g)
         self.set_reg(self.REG_BLUE, b)
-    
+
+
     def set_color(self, color):
         if(color == 0):
             self.set_rgb(255, 255, 255)
@@ -199,6 +232,3 @@ class LCD1602_RGB(LCD1602):
             self.set_rgb(0, 0, 255)
         else:
             return
-        
-        
-

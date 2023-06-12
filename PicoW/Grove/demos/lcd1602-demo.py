@@ -1,18 +1,15 @@
 from lcd1602 import LCD1602
 from machine import I2C,Pin
-from time import sleep
 
-i2c = I2C(1,scl=Pin(7), sda=Pin(6), freq=400000)
+i2c0 = I2C(0,scl=Pin(9), sda=Pin(8), freq=400000)
+i2c1 = I2C(1,scl=Pin(7), sda=Pin(6), freq=400000)
 
-# Grove 16x2 LCD
-# Aansluiten op I2C1
-display = LCD1602(i2c, 2, 16)
+# Grove 16x2 LCD, aangesloten op poort I2Cx
+display = LCD1602(i2c0)
 
-# Cursor naar eerste regel
-display.home()
-display.print('*RASPBERRY PICO*')
+# Eerste regel
+display.printLine1('*RASPBERRY PICO*')
 
-# Cursor naar volgende regel
-display.setCursor(0, 1)
-display.print('Hello world!')
+# Tweede regel
+display.printLine2('Hello, world!')
 

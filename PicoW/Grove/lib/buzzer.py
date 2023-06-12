@@ -16,7 +16,7 @@ class MUSIC:
 class BUZZER:
     def __init__(self):
         # DAC output (buzzer) connected to A1
-        self.buzzer = PWM(Pin(27))    
+        self.buzzer = PWM(Pin(27))
 
 
     def soundOff(self):    
@@ -59,8 +59,8 @@ class BUZZER:
 
     def mi(self, duration=0.5):
         self.buzzer.freq(1318) #MI
-        self.buzzer.duty_u16(1000)    
-        sleep(duation)
+        self.buzzer.duty_u16(1000)
+        sleep(duration)
         self.soundOff()
 
 
@@ -80,7 +80,7 @@ class BUZZER:
 
     def la(self, duration=0.5):
         self.buzzer.freq(1760) #LA
-        self.buzzer.duty_u16(1000)   
+        self.buzzer.duty_u16(1000)
         sleep(duration)
         self.soundOff()
 
