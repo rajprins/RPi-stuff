@@ -29,8 +29,9 @@ fi
 echo
 echo ">>> Installeren van benodige OS packages"
 
-# Login wachtwoord is nodig voor sudo
-echo -n "Geef het login wachtwoord van huidige gebruiker (${USER}): "
+# Login wachtwoord is nodig voor 'sudo'
+echo
+echo "Voor de installatie van packages is het login wachtwoord nodig."
 sudo -v
 sudo apt install python3-virtualenv git -y
 
@@ -43,13 +44,13 @@ echo ">>> Installeren van Grove.py libraries"
 if ! [[ -d $HOME/git ]] ; then
    mkdir $HOME/git
 fi
-cd $HOME/git
 
 # Grove.py github repo clonen
+cd $HOME/git
 git clone $GH_REPO
-cd grove.py
 
 # Python virtuele omgeving aanmaken
+cd $HOME/git/grove.py
 virtualenv -p python3 env
 source env/bin/activate
 
@@ -60,4 +61,5 @@ pip3 install .
 ### En klaar...
 echo
 echo "De Grove.py libraries zijn geinstalleerd voor de huidige gebruiker."
+echo "Directory: $HOME/git/grovy.py"
 echo
