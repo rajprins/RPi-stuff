@@ -11,5 +11,5 @@ display = LCD1602(i2c0)
 display.printLine1('*RASPBERRY PICO*')
 
 # Tweede regel
-display.printLine2('Hello, world!')
+display.printLine2('Hello, World!')
 

@@ -1,0 +1,4 @@
+https://micropython.org/download/RPI_PICO2/
+
+https://docs.micropython.org/en/latest/rp2/quickref.html
+
