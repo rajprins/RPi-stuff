@@ -47,6 +47,7 @@ cd $HOME/git
 
 # Grove.py github repo clonen
 git clone $GH_REPO
+cd grove.py
 
 # Python virtuele omgeving aanmaken
 virtualenv -p python3 env
