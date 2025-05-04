@@ -12,7 +12,7 @@ echo "+-------------------------------------------------------------------------
 
 ### Stap 1: Controleren op de juiste versie van Raspberry Pi OS (armhf)
 echo
-DETECTED_ARCH=$(dpkg --print=architecture)
+DETECTED_ARCH=$(dpkg --print-architecture)
 if ! [[ $DETECTED_ARCH == $OS_ARCH ]] ; then
    echo "Fout: Dit is niet de 32-bits versie van Raspberry Pi OS!"
    echo "De Grove libraries zijn niet compatibel met het huidige besturingssysteem."
