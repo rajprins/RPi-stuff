@@ -1,22 +1,21 @@
 # RPi-stuff
 
-Various Raspberry Pi projects, demos and libraries.
+Various Raspberry Pi resources, demos and libraries.
 
-## Projects
+## Index
 
-### PicoW
-Demos and samples for the Raspberry Pi Pico W.
+### Pi4  
+Resources voor Raspberry Pi 3/4/5.  
+Bevat installatie script voor Grove.py  
 
-**Instructions**
-1. Create a file named `secrets.py` in directory RPi-stuff/PicoW/Python.
-
-2. The contents of this file will contain the credentials of the wifi network you want to use with you PicoW.
-
-3. Add the following lines to this file:
+```bash
+curl -sL https://raw.githubusercontent.com/rajprins/RPi-stuff/refs/heads/main/Pi4/Grove/install.sh | bash -s -
 ```
-secrets = {
-    'ssid': 'MyWifiName',
-    'password': 'MyPassword'
-}
-```
-4. Change the values with your actual wifi name and password. Don't forget to save the file.
+
+### Pico
+Demo's, firmware en voorbeeldcode (MicroPython) voor de Raspberry Pi Pico (W).
+
+
+### Pico 2
+Demo's, firmware en voorbeeldcode (MicroPython) voor de Raspberry Pi Pico 2 (W).
+
