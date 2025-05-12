@@ -29,21 +29,21 @@ if len(sys.argv) < 2:
 hiscore = float(sys.argv[1])
 
 # Start de sonic ranger
-#Grove = GroveUltrasonicRanger
 sonar = GroveUltrasonicRanger(int(_PORT))
 
 # Start een loop
 while True:
-    os.system('clear') #scherm leegmaken
-    afstand = sonar.get_distance() #meet afstand via sensor
+    os.system('clear') # scherm leegmaken
+    afstand = sonar.get_distance() # meet afstand via sensor
 
-    print('Beste score  : ',hiscore)
-    print('Jouw afstand : ',afstand)
+    print('Beste score  : ',hiscore) # Toon de huidige high score
+    print('Jouw afstand : ',afstand) # Toon de gemeten afstand
 
-    # Indien nieuwe beste score
+    # Indien nieuwe beste score 
+    # (dus wanneer de gemeten afstand kleiner is dan de high score)
     if afstand < hiscore:
         print('\n*** NIEUWE HIGH SCORE! ***')
-        hiscore = afstand
+        hiscore = afstand # Zet de nieuwe high score naar de gemeten afstand
 
     # Wacht 1 seconde voor de volgende meting begint
     time.sleep(1)
