@@ -5,7 +5,8 @@
 # Syntax: python3 sonic_ranger_demo.py <begin_score_in_CM>
 # Voorbeeld: python3 sonic_ranger_demo.py 30
 # 
-# Let op: zorg er voor dat bestand sonic_ranger_lib in dezelfde directory staat
+# Let op:
+# Zorg er voor dat bestand sonic_ranger_lib.py in dezelfde directory staat
 ################################################################################
 
 import time
