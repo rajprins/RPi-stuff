@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 ################################################################################
 # Sonic Ranger moet worden aangesloten op poort D5
+#
 # Syntax: python3 sonic_ranger_demo.py <begin_score_in_CM>
-# Voorbeeld: python3 sonic-ranger-demo.py 30
+# Voorbeeld: python3 sonic_ranger_demo.py 30
+# 
+# Let op: zorg er voor dat bestand sonic_ranger_lib in dezelfde directory staat
 ################################################################################
 
 import time
