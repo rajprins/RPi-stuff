@@ -6,6 +6,7 @@ servo.py - Servo module
 
 
 [I2C interface]
+grove_ultrasonic_ranger.py - Ultrasonic range/distance sensor
 acc_adxl345.py - Accelerator sensor
 dht20.py - Temperature & humidity sensor
 lcd1602.py - 16x02 LCD display

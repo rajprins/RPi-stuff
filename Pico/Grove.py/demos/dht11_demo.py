@@ -9,7 +9,6 @@ from lcd1602 import LCD1602
 from machine import I2C,Pin
 from time import sleep
 from dht11 import DHT
-import utime
 
 
 def setup():
@@ -23,7 +22,7 @@ def main():
         print('Temp: {}'.format(temp)) 
         print('Humid: {}'.format(humid))
         
-        utime.sleep(5) # wait 5 seconds
+        sleep(5) #wait 5 seconds
 
 
 setup()

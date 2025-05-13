@@ -1,8 +1,17 @@
+##############################################################################
+# Contains the class BUZZER, which is used to control the buzzer. 
+# The class provides methods to play different notes and melodies. 
+# The buzzer is connected to a PWM pin on the microcontroller.
+# The code uses the PWM class from the machine module to control the    
+# buzzer's frequency and duty cycle.
+##############################################################################
+
 from machine import I2C,Pin,PWM
 from time import sleep
 
-
+# Frequency values for musical notes
 Freq = (30000,1046,1174,1318,1396,1567,1780,1975,2085)
+
 
 class MUSIC:
     def __init__(self,pwm1):
@@ -22,7 +31,7 @@ class BUZZER:
     def soundOff(self):    
         self.buzzer.duty_u16(0)
 
-
+    # Predefined sound for OK event
     def soundOK(self):
         self.buzzer.duty_u16(10000)
         self.buzzer.freq(1000)
@@ -33,7 +42,7 @@ class BUZZER:
         sleep(0.1)    
         self.soundOff()
 
-
+    # Predefined sound for error event
     def soundError(self):
         self.buzzer.freq(2000)
         self.buzzer.duty_u16(10000)

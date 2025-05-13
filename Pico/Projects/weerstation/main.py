@@ -48,10 +48,7 @@ def main():
             # Toon de vochtigheid op LCD scherm
             display.print('Vochtigheid {} %'.format(humid))
             # Wacht 5 seconden
-            sleep(5)            
-        #end if
-    #end while
-#end main()
+            sleep(5)
 
 
 setup()
