@@ -1,0 +1,1 @@
+https://github.com/pimoroni/pimoroni-pico-rp2350/releases
