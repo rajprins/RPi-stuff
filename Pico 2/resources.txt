@@ -2,3 +2,5 @@ https://micropython.org/download/RPI_PICO2/
 
 https://docs.micropython.org/en/latest/rp2/quickref.html
 
+Pimoroni Pico MicroPython for RP2350 / Pico2 boards:
+https://github.com/pimoroni/pimoroni-pico-rp2350
