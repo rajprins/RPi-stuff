@@ -21,11 +21,13 @@ class Tank:
         self.left_right = left_right
         self.tank_color = tank_color
         self.position = (0,0)
+        
         # Angle that the gun is pointing (degrees relative to horizontal)
         if (left_right == "left"):
             self.gun_angle = 20
         else :
             self.gun_angle = 50
+            
         # Amount of power to fire with - is divided by 40 to give scale 10 to 100
         self.gun_power = 25
         

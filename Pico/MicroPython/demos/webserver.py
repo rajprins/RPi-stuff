@@ -69,7 +69,7 @@ myAddress = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 mySocket = socket.socket()
 mySocket.bind(myAddress)
 mySocket.listen(1)
-print('Socket created. URL: http://', ipaddress)
+print('Socket created. URL: http://',ipaddress)
 
 
 # Listen for connections
