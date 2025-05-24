@@ -13,10 +13,10 @@ button_b = machine.Pin(13, machine.Pin.IN, machine.Pin.PULL_UP)
 button_x = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_UP)
 button_y = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
 
-# Set up Display Pack and Display Pack 2.0
+# Set up display from Pico Display Pack
 display = PicoGraphics(display=DISPLAY_PICO_DISPLAY, pen_type=PEN_RGB565, rotate=0)
 
-# Set up the RGB LED For Display Pack and Display Pack 2.0
+# Set up the onboard RGB LED
 led = RGBLED(6, 7, 8)
 
 # Screen brightness
@@ -31,7 +31,7 @@ WIDTH, HEIGHT = display.get_bounds()
 SKY_COLOR = display.create_pen(165,182,255)
 
 # Ground color is green
-GND_COLOR = display.create_pen(9,84,5)     
+GND_COLOR = display.create_pen(9,84,5)
 
 # Tank 1 is blue
 TANK_COLOR_P1 = display.create_pen(0, 0, 255)
@@ -69,38 +69,47 @@ tank2 = Tank(display, "right", TANK_COLOR_P2)
 # Only fire one shell at a time, a single shell object can be used for both player 1 and player 2    
 shell = Shell(display, SHELL_COLOR)
 
-# Draw ground
-ground = Terrain(display, GND_COLOR)
+# Set up terrain in a given color
+terrain = Terrain(display, GND_COLOR)
 
 
-def run_game():
-    global key_mode, game_state
-    
+def draw_background():
+    # Basic sky color in RGB format
     R=165
     G=180
     B=255
 
+    # Gradient background color by drawing as many lines as the display height
+    # The value for blue (in the RGB color format) decreased for each consecutive line
+    # Same for the green value, but only 1/4
+    for Y in range(0, HEIGHT):
+        red = R
+        green = G - int(Y/4)
+        blue = B - Y
+        
+        color = display.create_pen(red,green,blue)
+        display.set_pen(color)
+        display.line(0,Y,WIDTH,Y)
+    #endloop
+
+
+def run_game():
+    global key_mode, game_state
+
+    # Main even loop
     while True:
-        # Draw gradient background color as sky
-        #display.set_pen(SKY_COLOR)
-        #display.clear()
-        for Y in range(0,HEIGHT):
-            blue = B - Y
-            green = G - int(Y/4)
-            color = display.create_pen(165,green,blue)
-            display.set_pen(color)
-            display.line(0,Y,WIDTH,Y)
-        #endloop
+
+        draw_background()
         
         display.set_pen(TANK_COLOR_P1)
         
-        # Draw terrain
-        ground.draw()
+        # Draw random terrain
+        terrain.draw()
         
-        # Draw tank 1
+        # Draw tank 1 (player 1, blue)
         tank1.draw ()
         
-        # Draw tank 2
+        # Draw tank 2 (player 2, red)
         tank2.draw ()
         
         # Refresh screen
@@ -109,13 +118,14 @@ def run_game():
         if (game_state == "player1fire" or game_state == "player2fire"):
             shell.draw()
 
+        # Set proper text color for further use
         display.set_pen(TEXT_COLOR)
         
-        # Display score and status info for player 1
+        # Display settings and status info for player 1
         if (game_state == "player1" or game_state == "player1fire"):
             # Set onboard LED to color blue
             led.set_rgb(0, 0, 255)
-            # Set display
+            # Set text on display in color blue
             display.set_pen(TANK_COLOR_P1)
             display.text("PLAYER1", 5, 5, 240, 2)
             display.set_pen(TEXT_COLOR)
@@ -137,7 +147,7 @@ def run_game():
         if (game_state == "player2" or game_state == "player2fire"):
             # Set onboard LED to color blue
             led.set_rgb(255, 0, 0)
-            # Set display            
+            # Set text on display in color red 
             display.set_pen(TANK_COLOR_P2)
             display.text("PLAYER2", 5, 5, 240, 2)
             display.set_pen(TEXT_COLOR)
@@ -157,12 +167,15 @@ def run_game():
             
         # Display text if Player1 wins
         if (game_state == "game_over_1"):
-            # Simulate text shadow by drawing the same text twice in different colors
+            # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
+            # This is the "shadow", in black
+            display.set_pen(TEXT_COLOR_ACTIVE)
             display.set_pen(TEXT_COLOR)
-            display.text("Game Over", 44, 24, 240, 3)
-            display.text("Player 1 wins", 24, 54, 240, 3)
+            display.text("Game Over", 43, 23, 240, 3)
+            display.text("Player 1 wins", 23, 53, 240, 3)
             display.text("Press <B>", 44, 94, 240, 3)
-            # Simulate text shadow by drawing the same text twice in different colors, offset by 4 pixels
+            # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
+            # Main text in white
             display.set_pen(TEXT_COLOR_ACTIVE)
             display.text("Game Over", 40, 20, 240, 3)
             display.text("Player 1 wins", 20, 50, 240, 3)
@@ -170,12 +183,15 @@ def run_game():
             
         # Display text if Player 2 wins
         if (game_state == "game_over_2"):
-            # Simulate text shadow by drawing the same text twice in different colors
+            # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
+            # This is the "shadow", in black
+            display.set_pen(TEXT_COLOR_ACTIVE)
             display.set_pen(TEXT_COLOR)
-            display.text("Game Over", 44, 24, 240, 3)
-            display.text("Player 2 wins", 24, 54, 240, 3)
+            display.text("Game Over", 43, 23, 240, 3)
+            display.text("Player 2 wins", 23, 53, 240, 3)
             display.text("Press <B>", 44, 94, 240, 3)
-            # Simulate text shadow by drawing the same text twice in different colors, offset by 4 pixels
+            # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
+            # Main text in white
             display.set_pen(TEXT_COLOR_ACTIVE)
             display.text("Game Over", 40, 20, 240, 3)
             display.text("Player 2 wins", 20, 50, 240, 3)
@@ -186,11 +202,11 @@ def run_game():
 
 
         ## Update methods
-        # Only read keyboard in certain states
+        # Only read key presses in certain states
         
         # Player1's turn
         if (game_state == 'player1'):
-            player1_fired = player_keyboard("left")
+            player1_fired = key_pressed("left")
             if (player1_fired == True):
                 # Set shell position to end of gun
                 # Use gun_positions so we can get start position 
@@ -211,7 +227,7 @@ def run_game():
             # shell_value 20 is if other tank hit
             if (shell_value >= 20):
                 game_state = 'game_over_1'
-            # 10 is offscreen and 11 is hit ground, both indicate missed
+            # 10 is offscreen and 11 is hit terrain, both indicate missed
             elif (shell_value >= 10):
                 print("Player 1 missed")
                 # reset key mode to angle
@@ -222,7 +238,7 @@ def run_game():
 
         # Player2's turn
         if (game_state == 'player2'):
-            player2_fired = player_keyboard("right")
+            player2_fired = key_pressed("right")
             if (player2_fired == True):
                 # Set shell position to end of gun
                 # Use gun_positions so we can get start position 
@@ -243,7 +259,7 @@ def run_game():
             # shell_value 20 is if other tank hit
             if (shell_value >= 20):
                 game_state = 'game_over_2'
-            # 10 is offscreen and 11 is hit ground, both indicate missed
+            # 10 is offscreen and 11 is hit terrain, both indicate missed
             elif (shell_value >= 10):
                 print("Player 2 missed")
                 # reset key mode to angle
@@ -254,7 +270,7 @@ def run_game():
         
         # Hit
         if (game_state == 'game_over_1' or game_state == 'game_over_2'):
-            # Allow space key or left-shift (picade) to continue
+            # Allow button B to continue
             if (button_b.value() == 0) :
                 # Reset position of tanks and terrain
                 setup()
@@ -266,11 +282,15 @@ def setup():
     
     # reset key mode to angle
     key_mode = "angle"
-    ground.setup()
+    terrain.setup()
     
-    # Get positions of tanks from ground generator
-    tank1.set_position(ground.get_tank1_position())
-    tank2.set_position(ground.get_tank2_position())
+    # (Re)set power and angle to default values
+    tank1.reset()
+    tank2.reset()
+    
+    # Get positions of tanks from terrain generator
+    tank1.set_position(terrain.get_tank1_position())
+    tank2.set_position(terrain.get_tank2_position())
     
     game_state = "player1"
     print("Active player:", game_state)
@@ -282,7 +302,7 @@ def setup():
 # Return 0 for in-flight, 
 # 1 for offscreen temp (too high), 
 # 10 for offscreen permanent (too far), 
-# 11 for hit ground, 
+# 11 for hit terrain, 
 # 20 for hit other tank
 def detect_hit (left_right):
     (shell_x, shell_y) = shell.get_current_position()
@@ -311,7 +331,7 @@ def detect_hit (left_right):
     tank1_rect = tank1.get_rect()
     tank2_rect = tank2.get_rect()
     
-    # If gone below bottom of screen - hit ground
+    # If gone below bottom of screen - hit terrain
     if (shell_y >= HEIGHT):
         return 11
     
@@ -333,17 +353,16 @@ def detect_hit (left_right):
         print("*** Player 1 hit Tank 2 ***")
         return 20
 
-    if (ground.is_ground(int(shell_x), int(shell_y))):
+    if (terrain.is_ground(int(shell_x), int(shell_y))):
         return 11
     
     return 0
     
 
-# Handles keyboard for players
-# Although named keyboard (consistancy with pygame zero version) - for the pico this refers to buttons
-# If player has hit fire key (space) then returns True
+# Handles key presses for players
+# If player has hit fire key (A) then returns True
 # Otherwise changes angle of gun if applicable and returns False
-def player_keyboard(left_right):
+def key_pressed(left_right):
     global key_mode
     
     # change key_mode between angle and power using B button
@@ -416,6 +435,3 @@ def color_to_bytes (color):
 ### MAIN ###
 setup()
 run_game()
-
-
-
