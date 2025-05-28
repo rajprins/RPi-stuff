@@ -49,12 +49,13 @@ TEXT_COLOR_ACTIVE = display.create_pen(255,255,255)
 TEXT_COLOR = display.create_pen(0,0,0)
 
 # States are:
-#   start - timed delay before start
-#   player1 - waiting for player to set position
-#   player1fire - player 1 fired
-#   player2 - player 2 set position
-#   player2fire - player 2 fired
-#   game_over_1 / game_over_2 - show who won 1 = player 1 won etc.
+#   start        -> timed delay before start
+#   player1      -> waiting for player to set position
+#   player1fire  -> player 1 fired
+#   player2      -> player 2 set position
+#   player2fire  -> player 2 fired
+#   game_over_1  -> player 1 won
+#   game_over_2  -> player 2 won
 game_state = "player1"
 
 # switch button mode from angle to power
@@ -90,7 +91,6 @@ def draw_background():
         color = display.create_pen(red,green,blue)
         display.set_pen(color)
         display.line(0,Y,WIDTH,Y)
-    #endloop
 
 
 def run_game():
@@ -124,56 +124,71 @@ def run_game():
         # Display settings and status info for player 1
         if (game_state == "player1" or game_state == "player1fire"):
             # Set onboard LED to color blue
-            led.set_rgb(0, 0, 255)
+            led.set_rgb(0, 0, 5)
+            
             # Set text on display in color blue
             display.set_pen(TANK_COLOR_P1)
             display.text("PLAYER1", 5, 5, 240, 2)
-            display.set_pen(TEXT_COLOR)
             
-            # When POWER is selected
+            # If POWER is selected
             if (key_mode == "power"):
-                display.set_pen(TEXT_COLOR_ACTIVE)
-            display.text("PWR "+str(tank1.get_gun_power())+"%", 85, 5, 240, 2)
-            
-            # When ANGLE is selected
-            if (key_mode == "angle"):
-                display.set_pen(TEXT_COLOR_ACTIVE)
+                display.set_pen(TEXT_COLOR) # Black
+                display.text("PWR "+str(tank1.get_gun_power())+"%", 86, 6, 240, 2)                
+                display.set_pen(TEXT_COLOR_ACTIVE) # White
+                display.text("PWR "+str(tank1.get_gun_power())+"%", 85, 5, 240, 2)                
             else:
                 display.set_pen(TEXT_COLOR)
-            display.text("ANG "+str(tank1.get_gun_angle()), 170, 5, 240, 2)
+                display.text("PWR "+str(tank1.get_gun_power())+"%", 85, 5, 240, 2)
+            
+            # If ANGLE is selected
+            if (key_mode == "angle"):
+                display.set_pen(TEXT_COLOR) # Black
+                display.text("ANG "+str(tank1.get_gun_angle()), 171, 6, 240, 2)
+                display.set_pen(TEXT_COLOR_ACTIVE) # White
+                display.text("ANG "+str(tank1.get_gun_angle()), 170, 5, 240, 2)
+            else:
+                display.set_pen(TEXT_COLOR) # Black
+                display.text("ANG "+str(tank1.get_gun_angle()), 170, 5, 240, 2)
 
 
         # Display score and status info for player 2
         if (game_state == "player2" or game_state == "player2fire"):
             # Set onboard LED to color blue
-            led.set_rgb(255, 0, 0)
+            led.set_rgb(5, 0, 0)
+            
             # Set text on display in color red 
             display.set_pen(TANK_COLOR_P2)
             display.text("PLAYER2", 5, 5, 240, 2)
-            display.set_pen(TEXT_COLOR)
 
             # If POWER is selected
             if (key_mode == "power"):
+                display.set_pen(TEXT_COLOR)
+                display.text("PWR "+str(tank2.get_gun_power())+"%", 86, 6, 240, 2)                
                 display.set_pen(TEXT_COLOR_ACTIVE)
-            display.text("PWR "+str(tank2.get_gun_power())+"%", 85, 5, 240, 2)
+                display.text("PWR "+str(tank2.get_gun_power())+"%", 85, 5, 240, 2)                
+            else:
+                display.set_pen(TEXT_COLOR)
+                display.text("PWR "+str(tank2.get_gun_power())+"%", 85, 5, 240, 2)
             
             # If ANGLE is selected
             if (key_mode == "angle"):
+                display.set_pen(TEXT_COLOR)
+                display.text("ANG "+str(tank2.get_gun_angle()), 171, 6, 240, 2)
                 display.set_pen(TEXT_COLOR_ACTIVE)
+                display.text("ANG "+str(tank2.get_gun_angle()), 170, 5, 240, 2)
             else:
                 display.set_pen(TEXT_COLOR)
-            display.text("ANG "+str(tank2.get_gun_angle()), 170, 5, 240, 2)
+                display.text("ANG "+str(tank2.get_gun_angle()), 170, 5, 240, 2)
 
             
         # Display text if Player1 wins
         if (game_state == "game_over_1"):
             # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
             # This is the "shadow", in black
-            display.set_pen(TEXT_COLOR_ACTIVE)
             display.set_pen(TEXT_COLOR)
             display.text("Game Over", 43, 23, 240, 3)
             display.text("Player 1 wins", 23, 53, 240, 3)
-            display.text("Press <B>", 44, 94, 240, 3)
+            display.text("Press <B>", 43, 93, 240, 3)
             # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
             # Main text in white
             display.set_pen(TEXT_COLOR_ACTIVE)
@@ -185,11 +200,10 @@ def run_game():
         if (game_state == "game_over_2"):
             # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
             # This is the "shadow", in black
-            display.set_pen(TEXT_COLOR_ACTIVE)
             display.set_pen(TEXT_COLOR)
             display.text("Game Over", 43, 23, 240, 3)
             display.text("Player 2 wins", 23, 53, 240, 3)
-            display.text("Press <B>", 44, 94, 240, 3)
+            display.text("Press <B>", 43, 93, 240, 3)
             # Simulate text shadow by drawing the same text twice in different colors, offset by 3 pixels
             # Main text in white
             display.set_pen(TEXT_COLOR_ACTIVE)
@@ -353,6 +367,7 @@ def detect_hit (left_right):
         print("*** Player 1 hit Tank 2 ***")
         return 20
 
+    # Hit the terrain
     if (terrain.is_ground(int(shell_x), int(shell_y))):
         return 11
     
@@ -396,6 +411,7 @@ def key_pressed(left_right):
         elif (key_mode == "power" and left_right == 'right'):
             print(game_state, "- Pressed X: power up")
             tank2.change_gun_power(5)
+
     # Down moves firing angle downwards or decrease power
     if (button_y.value() == 0) :
         if (key_mode == "angle" and left_right == 'left'):
@@ -435,3 +451,4 @@ def color_to_bytes (color):
 ### MAIN ###
 setup()
 run_game()
+

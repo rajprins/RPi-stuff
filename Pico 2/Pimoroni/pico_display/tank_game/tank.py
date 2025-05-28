@@ -1,4 +1,5 @@
 import math
+import random
 
 # Tank 1 color: blue
 TANK_COLOR_P1 = (0, 0, 255)
@@ -21,16 +22,19 @@ class Tank:
         self.left_right = left_right
         self.tank_color = tank_color
         self.position = (0,0)
-        
+
         # Angle that the gun is pointing (degrees relative to horizontal)
-        #if (left_right == "left"):
-        self.gun_angle = 20
-        #else :
-        #    self.gun_angle = 50
-            
-        # Amount of power to fire with - is divided by 40 to give scale 10 to 100
-        self.gun_power = 25
+        # We randomize the angle for more challenge...
+        self.gun_angle = random.choice(range(0, 61, 5))
+
+        # Amount of power to fire with
+        # We randomize this too for more challenge...
+        self.gun_power = random.choice(range(25, 51, 5))
         
+    def reset(self):
+        self.gun_angle = random.choice(range(0, 61, 5))
+        self.gun_power = random.choice(range(25, 51, 5))
+
     def set_position (self, position):
         self.position = position
     
@@ -171,4 +175,5 @@ class Tank:
         ]
         
         return gun_positions
+
 
