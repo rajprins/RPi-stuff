@@ -175,5 +175,3 @@ class Tank:
         ]
         
         return gun_positions
-
-
