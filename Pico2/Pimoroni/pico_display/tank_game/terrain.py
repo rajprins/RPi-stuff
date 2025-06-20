@@ -80,5 +80,5 @@ class Terrain:
         self.display.set_pen(self.ground_color)
         # Use vertical lines for each terrain column for better performance
         for x, ground_y in enumerate(self.terrain_y_positions):
-            self.display.line(x, ground_y, x, self.height - 1)
+            self.display.line(x, ground_y, x, self.height)
 

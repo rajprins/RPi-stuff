@@ -63,6 +63,7 @@ class Game:
         self.game_state = "player1"
         print("Active player:", self.game_state)
 
+    # Detects successful hit based on shell and enemy tank coordinates
     def detect_hit(self, left_right):
         shell_x, shell_y = self.shell.get_current_position()
         shell_x += 2 if left_right == "left" else -2
@@ -122,27 +123,33 @@ class Game:
                 print(self.game_state, "- Pressed Y, power down:", tank.get_gun_power(), 'degrees')
         return False
 
+
     def draw_ui(self):
-        # Draw background and terrain
+        # Draw background (sky)
         draw_background(self.display, self.width, self.height)
-        self.display.set_pen(TANK_COLOR_P1)
+        # Draw terrain
         self.terrain.draw()
+        # Draw tanks
+        #self.display.set_pen(TANK_COLOR_P1)
         self.tank1.draw()
         self.tank2.draw()
         if self.game_state in ("player1fire", "player2fire"):
             self.shell.draw()
+        
         self.display.set_pen(TEXT_COLOR)
-        # Player 1 UI
+        # Player 1 indicator
         if self.game_state in ("player1", "player1fire"):
+            # set color of onboard LED to blue to indicate player 1's turn
             self.led.set_rgb(0, 0, 5)
             self.display.set_pen(TANK_COLOR_P1)
-            self.display.text("PLAYER1", 5, 5, 240, 2)
+            self.display.text("PLAYER1", 5, 3, 240, 2)
             self._draw_power_angle(self.tank1)
-        # Player 2 UI
+        # Player 2 indicator
         if self.game_state in ("player2", "player2fire"):
+            # set color of onboard LED to red to indicate player 2's turn
             self.led.set_rgb(5, 0, 0)
             self.display.set_pen(TANK_COLOR_P2)
-            self.display.text("PLAYER2", 5, 5, 240, 2)
+            self.display.text("PLAYER2", 5, 3, 240, 2)
             self._draw_power_angle(self.tank2)
         # Game over screens
         if self.game_state == "game_over_1":
@@ -151,25 +158,26 @@ class Game:
             self._draw_game_over("Player 2 wins")
         self.display.update()
 
+
     def _draw_power_angle(self, tank):
         # Power
         if self.key_mode == "power":
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 86, 6, 240, 2)
+            self.display.text(f"PWR {tank.get_gun_power()}%", 86, 4, 240, 2)
             self.display.set_pen(TEXT_COLOR_ACTIVE)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 5, 240, 2)
+            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 3, 240, 2)
         else:
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 5, 240, 2)
+            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 3, 240, 2)
         # Angle
         if self.key_mode == "angle":
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 171, 6, 240, 2)
+            self.display.text(f"ANG {tank.get_gun_angle()}", 171, 4, 240, 2)
             self.display.set_pen(TEXT_COLOR_ACTIVE)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 5, 240, 2)
+            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 3, 240, 2)
         else:
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 5, 240, 2)
+            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 3, 240, 2)
 
     def _draw_game_over(self, winner_text):
         self.display.set_pen(TEXT_COLOR)
