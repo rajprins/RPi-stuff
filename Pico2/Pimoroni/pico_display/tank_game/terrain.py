@@ -6,6 +6,7 @@ TERRAIN_MAX_CHG = 20
 TERRAIN_MIN_Y = 50
 TERRAIN_TANK_SIZE = 20
 
+
 class Terrain:
     def __init__(self, display, ground_color):
         self.display = display
@@ -81,4 +82,3 @@ class Terrain:
         # Use vertical lines for each terrain column for better performance
         for x, ground_y in enumerate(self.terrain_y_positions):
             self.display.line(x, ground_y, x, self.height)
-

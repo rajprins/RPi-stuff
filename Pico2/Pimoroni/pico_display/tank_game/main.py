@@ -1,3 +1,7 @@
+################################################################################
+# https://github.com/pimoroni/pimoroni-pico/tree/main/micropython/modules/picographics#pico-graphics-
+################################################################################
+
 import math
 import random
 import utime
@@ -14,6 +18,7 @@ button_b = machine.Pin(13, machine.Pin.IN, machine.Pin.PULL_UP)
 button_x = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_UP)
 button_y = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
 
+#display = PicoGraphics(display=DISPLAY_PICO_DISPLAY, pen_type=PEN_RGB888, rotate=0)
 display = PicoGraphics(display=DISPLAY_PICO_DISPLAY, pen_type=PEN_RGB565, rotate=0)
 led = RGBLED(6, 7, 8)
 display.set_backlight(1.0)
@@ -33,7 +38,7 @@ def draw_background(display, width, height):
     R, G, B = 165, 180, 255
     for Y in range(0, height):
         red = R
-        green = G - int(Y/4)
+        green = G - int(Y / 4)
         blue = B - Y
         color = display.create_pen(red, green, blue)
         display.set_pen(color)
@@ -135,7 +140,8 @@ class Game:
         self.tank2.draw()
         if self.game_state in ("player1fire", "player2fire"):
             self.shell.draw()
-        
+
+        self.display.set_font("bitmap8")
         self.display.set_pen(TEXT_COLOR)
         # Player 1 indicator
         if self.game_state in ("player1", "player1fire"):

@@ -1,5 +1,6 @@
 import math
 
+
 class Shell:
     GRAVITY = 0.008
     DISTANCE_SCALE = 1.5
@@ -56,11 +57,10 @@ class Shell:
         self.time += self.TIME_STEP
 
     def _calculate_initial_velocity(self, left_right):
-        if left_right == 'left':
+        if left_right == "left":
             angle = self.angle
         else:
             angle = math.pi - self.angle
         vx = self.power * math.cos(angle)
         vy = self.power * math.sin(self.angle)
         return vx, vy
-

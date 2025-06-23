@@ -7,14 +7,17 @@ display = PicoGraphics(display=DISPLAY_PICO_DISPLAY_2, pen_type=PEN_RGB565)
 #240x135
 WIDTH, HEIGHT = display.get_bounds()
 
-R=165
+R=100
 G=180
 B=255
 
 for Y in range(0,HEIGHT):
-    blue = B - Y;
-    print("Y:", Y, " B:", blue)
-    color = display.create_pen(R,G,blue)
+    red = R
+    green = G
+    blue = B - Y
+    print("Y-axis:", Y, "Red:", red, "Green:", green, "Blue:", blue)
+
+    color = display.create_pen(red,green,blue)
     display.set_pen(color)
     display.line(0,Y,WIDTH,Y)
 
