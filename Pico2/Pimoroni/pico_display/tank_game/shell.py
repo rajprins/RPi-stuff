@@ -57,10 +57,16 @@ class Shell:
         self.time += self.TIME_STEP
 
     def _calculate_initial_velocity(self, left_right):
+        # Horizontal direction depends on which side is firing:
+        #   left  -> fire to the right (angle unchanged)
+        #   right -> mirror the angle across the vertical (pi - angle) so
+        #            cos() becomes negative and the shell travels left.
         if left_right == "left":
             angle = self.angle
         else:
             angle = math.pi - self.angle
         vx = self.power * math.cos(angle)
+        # Vertical component always uses the raw angle: firing "up" is the
+        # same for both tanks regardless of horizontal direction.
         vy = self.power * math.sin(self.angle)
         return vx, vy

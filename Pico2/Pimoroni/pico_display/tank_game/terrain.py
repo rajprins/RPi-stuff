@@ -13,6 +13,11 @@ class Terrain:
         self.ground_color = ground_color
         self.width, self.height = display.get_bounds()
         self.terrain_y_positions = [0] * self.width
+        # Precomputed run-length "spans" of columns that share the same
+        # ground height. Each entry is (x_start, x_end_exclusive, ground_y).
+        # Built once per setup() so draw() can emit a handful of rectangles
+        # instead of one vertical line per column every frame.
+        self.terrain_spans = []
         self.tank1_position = (0, 0)
         self.tank2_position = (0, 0)
         self.setup()
@@ -66,6 +71,24 @@ class Terrain:
                 terrain[current_x] = int(current_y)
                 current_x += 1
 
+        # Precompute contiguous spans of equal ground height for fast drawing.
+        self._build_spans()
+
+    def _build_spans(self):
+        # Collapse adjacent columns with the same ground_y into single spans.
+        terrain = self.terrain_y_positions
+        spans = []
+        if terrain:
+            span_start = 0
+            span_y = terrain[0]
+            for x in range(1, self.width):
+                if terrain[x] != span_y:
+                    spans.append((span_start, x, span_y))
+                    span_start = x
+                    span_y = terrain[x]
+            spans.append((span_start, self.width, span_y))
+        self.terrain_spans = spans
+
     def get_tank1_position(self):
         return self.tank1_position
 
@@ -79,6 +102,7 @@ class Terrain:
 
     def draw(self):
         self.display.set_pen(self.ground_color)
-        # Use vertical lines for each terrain column for better performance
-        for x, ground_y in enumerate(self.terrain_y_positions):
-            self.display.line(x, ground_y, x, self.height)
+        # Draw each precomputed span as a single filled rectangle. On mostly
+        # flat terrain this is far fewer draw calls than one line per column.
+        for x_start, x_end, ground_y in self.terrain_spans:
+            self.display.rectangle(x_start, ground_y, x_end - x_start, self.height - ground_y)

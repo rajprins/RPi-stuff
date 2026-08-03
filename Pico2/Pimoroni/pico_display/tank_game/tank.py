@@ -1,16 +1,10 @@
 import math
 import random
 
-# Tank 1 color: blue
-TANK_COLOR_P1 = (0, 0, 255)
+# Tank colors are supplied by the caller (see main.py) via the constructor,
+# so no color constants are needed here.
 
-# Tank 2 color: red
-TANK_COLOR_P2 = (255, 0, 0)
-
-# Shell color: white
-SHELL_COLOR = (255, 255, 255)
-
-# Add constants for gun size
+# Gun barrel dimensions (in pixels)
 GUN_LENGTH = 10
 GUN_DIAMETER = 2
 

@@ -25,7 +25,8 @@ display.set_backlight(1.0)
 WIDTH, HEIGHT = display.get_bounds()
 
 # --- Color Constants ---
-SKY_COLOR = display.create_pen(165,182,255)
+# Sky gradient starts from this top color (matches draw_background)
+SKY_COLOR = display.create_pen(165, 180, 255)
 GND_COLOR = display.create_pen(9,84,5)
 TANK_COLOR_P1 = display.create_pen(0, 0, 255)
 TANK_COLOR_P2 = display.create_pen(255, 0, 0)
@@ -33,15 +34,20 @@ SHELL_COLOR = display.create_pen(255,255,255)
 TEXT_COLOR_ACTIVE = display.create_pen(255,255,255)
 TEXT_COLOR = display.create_pen(0,0,0)
 
+# Precompute one pen per screen row for the sky gradient.
+# Creating pens is relatively expensive on the Pico, so doing it once at
+# startup (instead of every frame) is a big performance win and avoids
+# exhausting the limited pool of pen slots.
+_R, _G, _B = 165, 180, 255
+SKY_GRADIENT_PENS = [
+    display.create_pen(_R, _G - (Y // 4), _B - Y) for Y in range(HEIGHT)
+]
+
 # --- Utility Functions ---
 def draw_background(display, width, height):
-    R, G, B = 165, 180, 255
-    for Y in range(0, height):
-        red = R
-        green = G - int(Y / 4)
-        blue = B - Y
-        color = display.create_pen(red, green, blue)
-        display.set_pen(color)
+    # Draw the precomputed sky gradient, one horizontal line per row.
+    for Y in range(height):
+        display.set_pen(SKY_GRADIENT_PENS[Y])
         display.line(0, Y, width, Y)
 
 # --- Game Class ---
@@ -98,6 +104,8 @@ class Game:
         return 0
 
     def key_pressed(self, left_right):
+        # The active tank is the same for every branch below, so select it once.
+        tank = self.tank1 if left_right == 'left' else self.tank2
         # Switch key mode
         if button_b.value() == 0:
             self.key_mode = "power" if self.key_mode == "angle" else "angle"
@@ -110,22 +118,18 @@ class Game:
         # Up/Down for angle/power
         if button_x.value() == 0:
             if self.key_mode == "angle":
-                tank = self.tank1 if left_right == 'left' else self.tank2
                 tank.change_gun_angle(5)
                 print(self.game_state, "- Pressed X, angle up:", tank.get_gun_angle(), 'degrees')
             else:
-                tank = self.tank1 if left_right == 'left' else self.tank2
                 tank.change_gun_power(5)
-                print(self.game_state, "- Pressed X, power up:", tank.get_gun_power(), 'degrees')
+                print(self.game_state, "- Pressed X, power up:", tank.get_gun_power(), '%')
         if button_y.value() == 0:
             if self.key_mode == "angle":
-                tank = self.tank1 if left_right == 'left' else self.tank2
                 tank.change_gun_angle(-5)
                 print(self.game_state, "- Pressed Y, angle down:", tank.get_gun_angle(), 'degrees')
             else:
-                tank = self.tank1 if left_right == 'left' else self.tank2
                 tank.change_gun_power(-5)
-                print(self.game_state, "- Pressed Y, power down:", tank.get_gun_power(), 'degrees')
+                print(self.game_state, "- Pressed Y, power down:", tank.get_gun_power(), '%')
         return False
 
 
@@ -195,9 +199,15 @@ class Game:
         self.display.text(winner_text, 20, 50, 240, 3)
         self.display.text("Press <B>", 40, 90, 240, 3)
 
+    # Target loop delay in seconds. Caps the frame/input rate so button
+    # presses (X/Y) don't repeat too fast to control, while keeping shell
+    # animation smooth.
+    FRAME_DELAY = 0.02
+
     def run(self):
         while True:
             self.draw_ui()
+            utime.sleep(self.FRAME_DELAY)
             # Player 1 turn
             if self.game_state == 'player1':
                 if self.key_pressed("left"):
