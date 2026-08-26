@@ -3,7 +3,6 @@
 ################################################################################
 
 import math
-import random
 import utime
 import machine
 from picographics import PicoGraphics, DISPLAY_PICO_DISPLAY, PEN_RGB565
@@ -13,10 +12,45 @@ from shell import Shell
 from terrain import Terrain
 
 # --- Hardware Setup ---
-button_a = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
-button_b = machine.Pin(13, machine.Pin.IN, machine.Pin.PULL_UP)
-button_x = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_UP)
-button_y = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
+class Button:
+    """Edge-triggered button with optional hold-to-repeat.
+
+    pressed() returns True exactly once per physical press (on the
+    falling edge), so a short tap can never register multiple times.
+    If `repeat=(initial_ms, repeat_ms)` is given, holding the button
+    fires again after `initial_ms` and then every `repeat_ms`.
+    """
+
+    def __init__(self, pin, repeat=None):
+        self.pin = machine.Pin(pin, machine.Pin.IN, machine.Pin.PULL_UP)
+        self.repeat = repeat
+        self.was_down = False
+        self.next_repeat = 0
+
+    def pressed(self):
+        down = self.pin.value() == 0
+        if not down:
+            self.was_down = False
+            return False
+        now = utime.ticks_ms()
+        if not self.was_down:
+            # New press (falling edge)
+            self.was_down = True
+            if self.repeat:
+                self.next_repeat = utime.ticks_add(now, self.repeat[0])
+            return True
+        # Held down: auto-repeat if configured
+        if self.repeat and utime.ticks_diff(now, self.next_repeat) >= 0:
+            self.next_repeat = utime.ticks_add(now, self.repeat[1])
+            return True
+        return False
+
+
+# X/Y auto-repeat: first repeat after 250 ms, then every 100 ms while held.
+button_a = Button(12)
+button_b = Button(13)
+button_x = Button(14, repeat=(250, 100))
+button_y = Button(15, repeat=(250, 100))
 
 #display = PicoGraphics(display=DISPLAY_PICO_DISPLAY, pen_type=PEN_RGB888, rotate=0)
 display = PicoGraphics(display=DISPLAY_PICO_DISPLAY, pen_type=PEN_RGB565, rotate=0)
@@ -25,8 +59,6 @@ display.set_backlight(1.0)
 WIDTH, HEIGHT = display.get_bounds()
 
 # --- Color Constants ---
-# Sky gradient starts from this top color (matches draw_background)
-SKY_COLOR = display.create_pen(165, 180, 255)
 GND_COLOR = display.create_pen(9,84,5)
 TANK_COLOR_P1 = display.create_pen(0, 0, 255)
 TANK_COLOR_P2 = display.create_pen(255, 0, 0)
@@ -34,21 +66,24 @@ SHELL_COLOR = display.create_pen(255,255,255)
 TEXT_COLOR_ACTIVE = display.create_pen(255,255,255)
 TEXT_COLOR = display.create_pen(0,0,0)
 
-# Precompute one pen per screen row for the sky gradient.
+# Precompute the sky gradient as bands of rows sharing one pen.
 # Creating pens is relatively expensive on the Pico, so doing it once at
-# startup (instead of every frame) is a big performance win and avoids
-# exhausting the limited pool of pen slots.
+# startup (instead of every frame) is a big performance win. Grouping
+# rows into 4-row bands cuts draw calls ~4x; the color step per band is
+# below what RGB565 can resolve, so it looks identical.
+SKY_BAND_HEIGHT = 4
 _R, _G, _B = 165, 180, 255
-SKY_GRADIENT_PENS = [
-    display.create_pen(_R, _G - (Y // 4), _B - Y) for Y in range(HEIGHT)
+SKY_GRADIENT_BANDS = [
+    (Y, display.create_pen(_R, _G - (Y // 4), _B - Y))
+    for Y in range(0, HEIGHT, SKY_BAND_HEIGHT)
 ]
 
 # --- Utility Functions ---
 def draw_background(display, width, height):
-    # Draw the precomputed sky gradient, one horizontal line per row.
-    for Y in range(height):
-        display.set_pen(SKY_GRADIENT_PENS[Y])
-        display.line(0, Y, width, Y)
+    # Draw the precomputed sky gradient, one rectangle per band.
+    for y, pen in SKY_GRADIENT_BANDS:
+        display.set_pen(pen)
+        display.rectangle(0, y, width, SKY_BAND_HEIGHT)
 
 # --- Game Class ---
 class Game:
@@ -62,74 +97,106 @@ class Game:
         self.shell = Shell(display, SHELL_COLOR)
         self.game_state = "player1"
         self.key_mode = "angle"
+        # Dirty flag: only push a frame to the display when something has
+        # actually changed. Constantly re-sending the full framebuffer over
+        # SPI (unsynced with the panel refresh) causes visible flicker.
+        self.dirty = True
         self.setup()
 
-    def setup(self):
+    def setup(self, first_player="player1"):
         self.key_mode = "angle"
         self.terrain.setup()
         self.tank1.reset()
         self.tank2.reset()
         self.tank1.set_position(self.terrain.get_tank1_position())
         self.tank2.set_position(self.terrain.get_tank2_position())
-        self.game_state = "player1"
+        self.game_state = first_player
+        self.dirty = True
         print("Active player:", self.game_state)
 
-    # Detects successful hit based on shell and enemy tank coordinates
+    # Classifies a shell position (see _detect_hit_at for the codes).
     def detect_hit(self, left_right):
         shell_x, shell_y = self.shell.get_current_position()
+        return self._detect_hit_at(shell_x, shell_y, left_right)
+
+    def _detect_hit_at(self, shell_x, shell_y, left_right):
+        # Offset to the shell's visual center
         shell_x += 2 if left_right == "left" else -2
         shell_y += 2
-        if (shell_x > self.width or shell_x <= 0 or shell_y >= self.height):
+        # Off the sides: miss
+        if shell_x > self.width or shell_x <= 0:
             return 10
-        if (shell_y < 1):
-            if (shell_y < 0 - self.height):
+        # Above the screen: still flying (unless absurdly high)
+        if shell_y < 1:
+            if shell_y < 0 - self.height:
                 return 10
             return 1
-        tank1_rect = self.tank1.get_rect()
-        tank2_rect = self.tank2.get_rect()
-        if (shell_y >= self.height):
+        # Below the screen: counts as hitting the ground
+        if shell_y >= self.height:
             return 11
-        if (left_right == 'right' and
-            tank1_rect[0] <= shell_x <= tank1_rect[2] and
-            tank1_rect[1] <= shell_y <= tank1_rect[3]):
-            print("*** Player 2 hit Tank 1 ***")
+        # Enemy tank bounding box
+        if left_right == 'right':
+            rect = self.tank1.get_rect()
+        else:
+            rect = self.tank2.get_rect()
+        if (rect[0] <= shell_x <= rect[2] and
+                rect[1] <= shell_y <= rect[3]):
+            print("*** Player 2 hit Tank 1 ***" if left_right == 'right'
+                  else "*** Player 1 hit Tank 2 ***")
             return 20
-        if (left_right == 'left' and
-            tank2_rect[0] <= shell_x <= tank2_rect[2] and
-            tank2_rect[1] <= shell_y <= tank2_rect[3]):
-            print("*** Player 1 hit Tank 2 ***")
-            return 20
-        if (self.terrain.is_ground(int(shell_x), int(shell_y))):
+        if self.terrain.is_ground(int(shell_x), int(shell_y)):
             return 11
         return 0
+
+    # Checks the shell's path from its previous to current position,
+    # sampling intermediate points so a fast shell (up to ~15 px per
+    # update at high power) cannot tunnel through a 14 px tall tank
+    # or a thin ridge between two frames.
+    def detect_hit_swept(self, left_right):
+        x0, y0 = self.shell.get_previous_position()
+        x1, y1 = self.shell.get_current_position()
+        dx = x1 - x0
+        dy = y1 - y0
+        # One sample every ~4 px of travel, minimum 1 (the endpoint)
+        dist = abs(dx) + abs(dy)
+        steps = max(1, int(dist // 4))
+        for i in range(1, steps + 1):
+            t = i / steps
+            result = self._detect_hit_at(x0 + dx * t, y0 + dy * t, left_right)
+            if result != 0 and result != 1:
+                return result
+        # Report the endpoint state (0 in flight / 1 above screen)
+        return self._detect_hit_at(x1, y1, left_right)
 
     def key_pressed(self, left_right):
         # The active tank is the same for every branch below, so select it once.
         tank = self.tank1 if left_right == 'left' else self.tank2
-        # Switch key mode
-        if button_b.value() == 0:
+        # Switch key mode (edge-triggered: fires once per press, no sleep needed)
+        if button_b.pressed():
             self.key_mode = "power" if self.key_mode == "angle" else "angle"
             print(self.game_state, "- Switched to", self.key_mode.upper())
-            utime.sleep(0.5)
+            self.dirty = True
         # Fire
-        if button_a.value() == 0:
+        if button_a.pressed():
             print(self.game_state, "- Shot fired")
             return True
-        # Up/Down for angle/power
-        if button_x.value() == 0:
+        # Up/Down for angle/power (edge-triggered with hold-to-repeat)
+        if button_x.pressed():
             if self.key_mode == "angle":
                 tank.change_gun_angle(5)
                 print(self.game_state, "- Pressed X, angle up:", tank.get_gun_angle(), 'degrees')
             else:
                 tank.change_gun_power(5)
                 print(self.game_state, "- Pressed X, power up:", tank.get_gun_power(), '%')
-        if button_y.value() == 0:
+            self.dirty = True
+        if button_y.pressed():
             if self.key_mode == "angle":
                 tank.change_gun_angle(-5)
                 print(self.game_state, "- Pressed Y, angle down:", tank.get_gun_angle(), 'degrees')
             else:
                 tank.change_gun_power(-5)
                 print(self.game_state, "- Pressed Y, power down:", tank.get_gun_power(), '%')
+            self.dirty = True
         return False
 
 
@@ -170,24 +237,26 @@ class Game:
 
 
     def _draw_power_angle(self, tank):
-        # Power
+        pwr_text = f"PWR {tank.get_gun_power()}%"
+        ang_text = f"ANG {tank.get_gun_angle()}"
+        # Power (active mode gets a drop shadow + white highlight)
         if self.key_mode == "power":
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 86, 4, 240, 2)
+            self.display.text(pwr_text, 86, 4, 240, 2)
             self.display.set_pen(TEXT_COLOR_ACTIVE)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 3, 240, 2)
+            self.display.text(pwr_text, 85, 3, 240, 2)
         else:
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"PWR {tank.get_gun_power()}%", 85, 3, 240, 2)
+            self.display.text(pwr_text, 85, 3, 240, 2)
         # Angle
         if self.key_mode == "angle":
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 171, 4, 240, 2)
+            self.display.text(ang_text, 171, 4, 240, 2)
             self.display.set_pen(TEXT_COLOR_ACTIVE)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 3, 240, 2)
+            self.display.text(ang_text, 170, 3, 240, 2)
         else:
             self.display.set_pen(TEXT_COLOR)
-            self.display.text(f"ANG {tank.get_gun_angle()}", 170, 3, 240, 2)
+            self.display.text(ang_text, 170, 3, 240, 2)
 
     def _draw_game_over(self, winner_text):
         self.display.set_pen(TEXT_COLOR)
@@ -206,7 +275,12 @@ class Game:
 
     def run(self):
         while True:
-            self.draw_ui()
+            # Only redraw and push the framebuffer when something changed.
+            # Re-sending an identical frame every loop iteration makes the
+            # panel flicker and wastes CPU/SPI bandwidth.
+            if self.dirty:
+                self.draw_ui()
+                self.dirty = False
             utime.sleep(self.FRAME_DELAY)
             # Player 1 turn
             if self.game_state == 'player1':
@@ -219,10 +293,12 @@ class Game:
                     self.shell.set_angle(math.radians(self.tank1.get_gun_angle()))
                     self.shell.set_power(self.tank1.get_gun_power() / 40)
                     self.shell.set_time(0)
+                    self.dirty = True
             # Player 1 fire
             elif self.game_state == 'player1fire':
                 self.shell.update_shell_position("left")
-                shell_value = self.detect_hit("left")
+                self.dirty = True  # shell moved, animate it
+                shell_value = self.detect_hit_swept("left")
                 if shell_value >= 20:
                     self.game_state = 'game_over_1'
                 elif shell_value >= 10:
@@ -240,20 +316,23 @@ class Game:
                     self.shell.set_angle(math.radians(self.tank2.get_gun_angle()))
                     self.shell.set_power(self.tank2.get_gun_power() / 40)
                     self.shell.set_time(0)
+                    self.dirty = True
             # Player 2 fire
             elif self.game_state == 'player2fire':
                 self.shell.update_shell_position("right")
-                shell_value = self.detect_hit("right")
+                self.dirty = True  # shell moved, animate it
+                shell_value = self.detect_hit_swept("right")
                 if shell_value >= 20:
                     self.game_state = 'game_over_2'
                 elif shell_value >= 10:
                     print("player2 - Missed")
                     self.key_mode = "angle"
                     self.game_state = 'player1'
-            # Game over
+            # Game over: the loser gets the first turn in the next round
             elif self.game_state in ('game_over_1', 'game_over_2'):
-                if button_b.value() == 0:
-                    self.setup()
+                if button_b.pressed():
+                    loser = "player2" if self.game_state == "game_over_1" else "player1"
+                    self.setup(first_player=loser)
 
 # --- Main Entry Point ---
 if __name__ == "__main__":

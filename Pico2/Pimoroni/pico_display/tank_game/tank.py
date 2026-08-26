@@ -100,37 +100,18 @@ class Tank:
         # Gun position involves more complex calculations so in a separate function
         self.draw_gun(self.calc_gun_positions())
 
-    # Draw gun on tank - this is fairly crude designed for display with limited pixels
-    # Draws as thick line instead of parallelogram which is used
-    # on higher resolution screens
+    # Draw gun on tank - a single native thick line from the barrel base
+    # to the muzzle. PicoGraphics line() accepts a thickness parameter,
+    # which replaces the old per-pixel Python loop (one native call
+    # instead of ~20 pixel() calls per tank per frame).
     def draw_gun(self, gun_positions):
-        # Just used co-ords 0 and 1 and draw line radius pixels thick
-        if self.left_right == "left":
-            # split into variables to made code easier to follow
-            start_x = gun_positions[1][0]
-            start_y = gun_positions[1][1]
-            end_x = gun_positions[2][0]
-            end_y = gun_positions[2][1]
-        else:
-            # split into variables to made code easier to follow
-            start_x = gun_positions[2][0]
-            start_y = gun_positions[2][1]
-            end_x = gun_positions[1][0]
-            end_y = gun_positions[1][1]
-        # y delta is amount of change in y between first and last x position
-        # if flat then set to 0 (avoids divide by zero)
-        if end_y == start_y or end_x == start_x:
-            y_delta = 0
-        else:
-            y_delta = (end_y - start_y) / (end_x - start_x)
-        current_x = int(start_x)
-        current_y = int(start_y)
-        for x in range(start_x, end_x):
-            for y_offset in range(0, GUN_DIAMETER):
-                # print ("Drawing gun {} {}".format(current_x, int(current_y+y_offset)))
-                self.display.pixel(current_x, int(current_y + y_offset))
-            current_x += 1
-            current_y += y_delta
+        start_x, start_y = gun_positions[1]
+        end_x, end_y = gun_positions[2]
+        self.display.line(
+            int(start_x), int(start_y),
+            int(end_x), int(end_y),
+            GUN_DIAMETER,
+        )
 
     # Calculate the polygon positions for the gun barrel
     # This calculates a polygon based on the pygame zero method

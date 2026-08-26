@@ -14,6 +14,7 @@ class Shell:
     def reset(self):
         self.start_position = (0, 0)
         self.current_position = (0, 0)
+        self.previous_position = (0, 0)
         self.power = 1
         self.angle = 0
         self.time = 0
@@ -21,6 +22,7 @@ class Shell:
     def set_start_position(self, position):
         self.start_position = position
         self.current_position = position
+        self.previous_position = position
 
     def get_start_position(self):
         return self.start_position
@@ -30,6 +32,11 @@ class Shell:
 
     def get_current_position(self):
         return self.current_position
+
+    # Position at the previous physics step; used for swept collision
+    # detection so fast shells can't tunnel through tanks or terrain.
+    def get_previous_position(self):
+        return self.previous_position
 
     def set_angle(self, angle):
         self.angle = angle
@@ -53,6 +60,7 @@ class Shell:
         shell_x = x0 + vx * t * self.DISTANCE_SCALE
         shell_y = y0 - ((vy * t) - (0.5 * self.GRAVITY * t * t))
 
+        self.previous_position = self.current_position
         self.current_position = (shell_x, shell_y)
         self.time += self.TIME_STEP
 
